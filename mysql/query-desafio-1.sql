@@ -1,24 +1,20 @@
-#drop database empresa;
 
-CREATE DATABASE empresa;
-
-use empresa;
-
-CREATE TABLE IF NOT EXISTS departamentos(
-id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS empresa.departamentos(
+id int NOT NULL AUTO_INCREMENT,
 nome  varchar(150) unique not null,
 created_at timestamp default now(),
 updated_at timestamp default now(),
+primary key(id)
 );
 
-CREATE TABLE IF NOT EXISTS funcionarios(
+CREATE TABLE IF NOT EXISTS empresa.funcionarios(
 id int NOT NULL AUTO_INCREMENT,
 nome varchar(150) unique NOT NULL,
 cpf varchar(11) unique NOT NULL,
 rg varchar(13) unique NOT NULL,
 sexo varchar(1) NOT NULL,
 possui_habilitacao bool DEFAULT false,
-valor_salario DEFAULT 0 NOT NULL,
+valor_salario FLOAT DEFAULT 0 NOT NULL,
 carga_horaria_semanal float  DEFAULT 0 NOT NULL,
 id_departamento int NOT NULL,
 created_at timestamp DEFAULT now(),
@@ -26,7 +22,7 @@ updated_at timestamp DEFAULT now(),
 primary key(id)
 );
 
-CREATE TABLE IF NOT EXISTS projetos(
+CREATE TABLE IF NOT EXISTS empresa.projetos(
 id int not null AUTO_INCREMENT,
 id_departamento int not null,
 nome varchar(150) not null,
@@ -40,7 +36,7 @@ updated_at timestamp default now(),
 primary key(id)
 );
 
-CREATE TABLE IF NOT EXISTS supervisor_projeto(
+CREATE TABLE IF NOT EXISTS empresa.supervisor_projeto(
 id int not null AUTO_INCREMENT,
 id_funcionario int  not null,
 carga_horaria float not null,
@@ -50,7 +46,7 @@ primary key(id)
 );
 
 
-CREATE TABLE IF NOT EXISTS funcionario_projeto(
+CREATE TABLE IF NOT EXISTS empresa.funcionario_projeto(
 id SERIAL PRIMARY KEY,
 id_funcionario int  not null,
 id_projeto int not null,
@@ -61,41 +57,41 @@ updated_at timestamp default now()
 
 
 
-ALTER TABLE funcionarios
-ADD FOREIGN KEY (id_departamento) REFERENCES departamentos(id);
+ALTER TABLE empresa.funcionarios
+ADD FOREIGN KEY (id_departamento) REFERENCES empresa.departamentos(id);
 #projeto
-ALTER TABLE projetos ADD UNIQUE `unico_nome_id_departamento`(`nome`, `id_departamento`);
+ALTER TABLE empresa.projetos ADD UNIQUE `unico_nome_id_departamento`(`nome`, `id_departamento`);
 
-ALTER TABLE projetos
-ADD FOREIGN KEY (id_departamento) REFERENCES departamentos(id);
+ALTER TABLE empresa.projetos
+ADD FOREIGN KEY (id_departamento) REFERENCES empresa.departamentos(id);
 
-ALTER TABLE projetos
-ADD FOREIGN KEY (id_supervisor_projeto) REFERENCES supervisor_projeto(id);
-
-#supervisor projeto
-
-ALTER TABLE supervisor_projeto
-ADD FOREIGN KEY (id_funcionario) REFERENCES funcionarios(id);
-
-#funcionario projeto 
-ALTER TABLE funcionario_projeto
-ADD FOREIGN KEY (id_funcionario) REFERENCES funcionarios(id);
-
-ALTER TABLE funcionario_projeto
-ADD FOREIGN KEY (id_projeto) REFERENCES projetos(id);
-
-ALTER TABLE funcionario_projeto ADD UNIQUE `funcionario_projeto_unique_const`(`id_funcionario`, `id_projeto`);
+ALTER TABLE empresa.projetos
+ADD FOREIGN KEY (id_supervisor_projeto) REFERENCES empresa.supervisor_projeto(id);
 
 
 
-CREATE PROCEDURE create_departamento(IN data JSON)
+ALTER TABLE empresa.supervisor_projeto
+ADD FOREIGN KEY (id_funcionario) REFERENCES empresa.funcionarios(id);
+
+
+ALTER TABLE empresa.funcionario_projeto
+ADD FOREIGN KEY (id_funcionario) REFERENCES empresa.funcionarios(id);
+
+ALTER TABLE empresa.funcionario_projeto
+ADD FOREIGN KEY (id_projeto) REFERENCES empresa.projetos(id);
+
+ALTER TABLE empresa.funcionario_projeto ADD UNIQUE `funcionario_projeto_unique_const`(`id_funcionario`, `id_projeto`);
+
+
+
+CREATE PROCEDURE IF NOT EXISTS empresa.create_departamento(IN data JSON)
 	BEGIN
 			DECLARE nome VARCHAR(150) default null;
 			SET nome = json_unquote(json_extract(data,'$.nome')); 
 			insert into departamentos(nome) values(nome);
 	END;
 	
-CREATE PROCEDURE update_departamento(IN data JSON)
+CREATE PROCEDURE IF NOT EXISTS empresa.update_departamento(IN data JSON)
 	BEGIN
 			DECLARE id int default null;
 			DECLARE nome1 VARCHAR(150) default null;
@@ -107,14 +103,14 @@ CREATE PROCEDURE update_departamento(IN data JSON)
 			where d.id = id;
 	END;
 
-CREATE PROCEDURE delete_departamento(IN data JSON)
+CREATE PROCEDURE IF NOT EXISTS empresa.delete_departamento(IN data JSON)
 	BEGIN
 			DECLARE id int default null;			
 			SET id = json_unquote(json_extract(data,'$.id')); 
 			delete from departamentos d where d.id = id;
 	END;
 
-CREATE PROCEDURE IF NOT EXISTS read_departamento(IN data JSON)
+CREATE PROCEDURE IF NOT EXISTS empresa.read_departamento(IN data JSON)
 		BEGIN
 				DECLARE id int default null;
 				SET id = json_unquote(json_extract(data,'$.id')); 
@@ -127,17 +123,8 @@ CREATE PROCEDURE IF NOT EXISTS read_departamento(IN data JSON)
 
 
 
-CALL create_departamento('{"nome":"Contabilidade"}') ;
-CALL create_departamento('{"nome":"WEB Develop"}') ;
-CALL read_departamento('{"id":"1"}')
-CALL read_departamento('{}')
-call delete_departamento('{"id":"1"}') 
-CALL update_departamento('{"id":"2","nome":"VIEW MODEL 2"}') 
 
-
-#funcionario CRUD PROCEDURE
-
-CREATE PROCEDURE create_funcionario(IN _data JSON)
+CREATE PROCEDURE IF NOT EXISTS empresa.create_funcionario(IN _data JSON)
 	BEGIN
 			DECLARE nome VARCHAR(150) DEFAULT  NULL;
 			DECLARE cpf varchar(11) DEFAULT NULL;
@@ -161,12 +148,8 @@ CREATE PROCEDURE create_funcionario(IN _data JSON)
 			values(nome,cpf,rg,sexo,possui_habilitacao,valor_salario,carga_horaria_semanal,id_departamento);
 	END;
 
-#'{"nome":"Manoel vitor","cpf":"61233121201","rg":"1231313131","sexo":"M","possui_habilitacao":"1","carga_horaria_semanal":"40","id_departamento":"2"}'
-CALL create_funcionario('{"nome":"Manoel vitor","cpf":"61233121201","rg":"1231313131","sexo":"M","possui_habilitacao":"1","valor_salario":"2500","carga_horaria_semanal":"40","id_departamento":"2"}');
-CALL create_funcionario('{"nome":"Bruno oliveira","cpf":"51233121201","rg":"1331313131","sexo":"M","possui_habilitacao":"1","valor_salario":"4500","carga_horaria_semanal":"45","id_departamento":"1"}');
-CALL create_funcionario('{"nome":"test","cpf":"51233121203","rg":"1231313132","sexo":"f","possui_habilitacao":"1","valor_salario":"4500","carga_horaria_semanal":"100","id_departamento":"1"}');
 
-CREATE PROCEDURE IF NOT EXISTS  read_funcionario(IN _data JSON)
+CREATE PROCEDURE IF NOT EXISTS  empresa.read_funcionario(IN _data JSON)
 		BEGIN
 				DECLARE id int DEFAULT NULL;
 				SET id = json_unquote(json_extract(_data,'$.id')); 
@@ -178,11 +161,8 @@ CREATE PROCEDURE IF NOT EXISTS  read_funcionario(IN _data JSON)
 		END;
 
 	
-CALL read_funcionario('{}') ;
-CALL read_funcionario('{"id":"4"}') ;
 
-
-CREATE PROCEDURE update_funcionario(IN _data JSON)
+CREATE PROCEDURE IF NOT EXISTS empresa.update_funcionario(IN _data JSON)
 	BEGIN
 			DECLARE _id int DEFAULT NULL;
 			DECLARE _nome VARCHAR(150) DEFAULT NULL;
@@ -210,25 +190,21 @@ CREATE PROCEDURE update_funcionario(IN _data JSON)
 	END;
 
 
-CALL update_funcionario('{"id":"1","nome":"Manoel vitor S R","cpf":"61233121201","rg":"1231313131","sexo":"M","possui_habilitacao":"0","valor_salario":"3500","carga_horaria_semanal":"35","id_departamento":"1"}');
 
 
 
-CREATE PROCEDURE delete_funcionario(IN _data JSON)
+CREATE PROCEDURE IF NOT EXISTS empresa.delete_funcionario(IN _data JSON)
 	BEGIN
 			DECLARE id int DEFAULT NULL;			
 			SET id = json_unquote(json_extract(_data,'$.id')); 
 			DELETE FROM funcionarios f WHERE f.id = id;
 	END;
 
-CALL delete_funcionario('{"id":"7"}');
-
-
 
 
 #projeto CRUD PROCEDURE
 
-CREATE PROCEDURE IF NOT EXISTS create_projeto(IN _data JSON)
+CREATE PROCEDURE IF NOT EXISTS empresa.create_projeto(IN _data JSON)
 	BEGIN
 			
 			DECLARE id_departamento int DEFAULT 0;
@@ -278,17 +254,16 @@ CREATE PROCEDURE IF NOT EXISTS create_projeto(IN _data JSON)
 
 
 
-CALL create_projeto('{"id_departamento":"1","nome":"Site da WEB 1.0","total_horas_para_concluir":"220","id_funcionario":"1","carga_horaria":"8"}'); 
-CALL create_projeto('{"id_departamento":"2","nome":"Site da WEB 3.0","total_horas_para_concluir":"120","id_funcionario":"4","carga_horaria":"15"}');
 
-CREATE PROCEDURE IF NOT EXISTS delete_projeto(IN _data JSON)
+
+CREATE PROCEDURE IF NOT EXISTS empresa.delete_projeto(IN _data JSON)
 	BEGIN
 			DECLARE id int DEFAULT NULL;			
 			SET id = json_unquote(json_extract(_data,'$.id')); 
 			DELETE FROM projetos p WHERE p.id = id;
 	END;
 
-CREATE PROCEDURE IF NOT EXISTS read_projeto(IN _data JSON)
+CREATE PROCEDURE IF NOT EXISTS empresa.read_projeto(IN _data JSON)
 		BEGIN
 				DECLARE id int DEFAULT NULL;
 				SET id = json_unquote(json_extract(_data,'$.id')); 
@@ -299,7 +274,7 @@ CREATE PROCEDURE IF NOT EXISTS read_projeto(IN _data JSON)
 			    END IF;				
 		END;
 	
-CREATE PROCEDURE IF NOT EXISTS update_projeto(IN _data JSON)
+CREATE PROCEDURE IF NOT EXISTS empresa.update_projeto(IN _data JSON)
 	BEGIN
 			DECLARE _id int DEFAULT 0; 
 			DECLARE _id_departamento int DEFAULT 0;
@@ -361,16 +336,9 @@ CREATE PROCEDURE IF NOT EXISTS update_projeto(IN _data JSON)
 			
 	END;
 
-CALL update_projeto('{"id":"1","id_departamento":"1","nome":"Criar Agent","total_horas_para_concluir":"320","id_supervisor_projeto":"3","id_funcionario":"1","carga_horaria":"30"}');
 
-CALL update_projeto('{"id":"8","id_departamento":"1","nome":"Site da WEB 1.2","total_horas_para_concluir":"225","id_supervisor_projeto":"10","id_funcionario":"4","carga_horaria":"5"}');
-
-#funcionario projeto
-#id_funcionario int  not null,
-#id_projeto int not null,
-#carga_horaria float not null,
  
-CREATE PROCEDURE IF NOT EXISTS add_funcionario_projeto(IN _data JSON)
+CREATE PROCEDURE IF NOT EXISTS empresa.add_funcionario_projeto(IN _data JSON)
 	BEGIN
 			
 			DECLARE id_funcionario int DEFAULT 0;
@@ -396,13 +364,10 @@ CREATE PROCEDURE IF NOT EXISTS add_funcionario_projeto(IN _data JSON)
 			END IF;
 	END;
 
-CALL add_funcionario_projeto('{"id_funcionario":"1","id_projeto":"1","carga_horaria":"30"}');
-CALL add_funcionario_projeto('{"id_funcionario":"4","id_projeto":"1","carga_horaria":"25"}');
-
-CALL add_funcionario_projeto('{"id_funcionario":"1","id_projeto":"3","carga_horaria":"5"}');
 
 
-CREATE PROCEDURE IF NOT EXISTS remove_funcionario_projeto(IN _data JSON)
+
+CREATE PROCEDURE IF NOT EXISTS empresa.remove_funcionario_projeto(IN _data JSON)
 	BEGIN
 			
 		DECLARE id int DEFAULT 0;
@@ -413,9 +378,7 @@ CREATE PROCEDURE IF NOT EXISTS remove_funcionario_projeto(IN _data JSON)
 		WHERE fp.id = id;
 	END;
 
-CALL remove_funcionario_projeto('{"id":"7"}') ;
 
-# funcao que recebe o funcionario e retornar o total de horas semanais.
 
 
 CREATE FUNCTION fn_total_horas_trabalhadas(id_funcionario INT) RETURNS FLOAT DETERMINISTIC
@@ -447,7 +410,7 @@ BEGIN
 END;
 
 
-CREATE PROCEDURE IF NOT EXISTS calculo_horas_realizada_projeto(IN _data JSON)
+CREATE PROCEDURE IF NOT EXISTS empresa.calculo_horas_realizada_projeto(IN _data JSON)
 	BEGIN
 			
 		DECLARE id int DEFAULT 0;
@@ -470,11 +433,9 @@ CREATE PROCEDURE IF NOT EXISTS calculo_horas_realizada_projeto(IN _data JSON)
 	 	
 	END;
 
-CALL calculo_horas_realizada_projeto('{"id":"1"}');
 
 
-
-CREATE PROCEDURE IF NOT EXISTS prazo_estimado_projeto(IN _data JSON)
+CREATE PROCEDURE IF NOT EXISTS empresa.prazo_estimado_projeto(IN _data JSON)
 	BEGIN
 			
 		DECLARE id int DEFAULT 0;
@@ -495,4 +456,4 @@ CREATE PROCEDURE IF NOT EXISTS prazo_estimado_projeto(IN _data JSON)
 	 	
 	END;
 
-CALL prazo_estimado_projeto('{"id":"1"}');
+
